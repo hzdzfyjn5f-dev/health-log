@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101713">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Health Log">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Health Log</title>
+<style>
+:root{color-scheme:dark;--bg:#0c110f;--panel:#151d19;--panel2:#1b2620;--line:#2a3930;--text:#edf3ee;--muted:#9eaea3;--mint:#b7d7bd;--gold:#d9c49a;--red:#e6a39b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1b2921 0,#0c110f 55%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;min-height:100vh}
+header{padding:calc(20px + env(safe-area-inset-top)) 20px 16px;display:flex;justify-content:space-between;align-items:center;max-width:900px;margin:auto}
+.brand{font-size:12px;letter-spacing:.22em;color:var(--mint);font-weight:700}.brand strong{display:block;font-size:25px;letter-spacing:.12em;color:var(--text);margin-top:5px}
+.date{font-size:12px;color:var(--muted);text-align:right}
+main{max-width:900px;margin:auto;padding:0 16px 110px}
+h1{font-size:24px;font-weight:600;letter-spacing:.02em;margin:12px 4px 4px}.sub{color:var(--muted);font-size:12px;margin:0 4px 20px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:linear-gradient(145deg,#1a251f,#121a16);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0;box-shadow:0 10px 30px #0002}
+.metric-label{color:var(--muted);font-size:12px}.metric{font-size:28px;font-weight:600;letter-spacing:-.04em;margin:9px 0 2px}.unit{font-size:12px;color:var(--muted);font-weight:400}.eyebrow{font-size:10px;letter-spacing:.18em;color:var(--gold);margin-bottom:9px}
+.section{margin-top:22px}.section-title{display:flex;justify-content:space-between;align-items:center;margin:0 4px 11px;font-size:15px;font-weight:600}.section-title small{font-size:11px;color:var(--muted);font-weight:400}
+button,.btn{border:0;border-radius:12px;padding:13px 15px;background:var(--mint);color:#142019;font-weight:700;font-size:13px;cursor:pointer}
+button.secondary{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.quick button{width:100%;text-align:left}
+nav{position:fixed;bottom:0;left:0;right:0;padding:9px 10px calc(9px + env(safe-area-inset-bottom));background:#101713ed;backdrop-filter:blur(18px);border-top:1px solid var(--line);display:flex;justify-content:center;gap:4px;z-index:5}
+nav button{background:transparent;color:var(--muted);padding:9px 12px;min-width:58px;font-size:11px}nav button.active{background:var(--panel2);color:var(--mint);border:1px solid var(--line)}
+.view{display:none}.view.active{display:block}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:12px;color:var(--muted)}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;background:#0d1511;color:var(--text);padding:12px;font:inherit;font-size:15px;min-width:0}textarea{min-height:80px;resize:vertical}
+.actions{display:flex;gap:8px;margin-top:14px}.actions button{flex:1}
+.list{display:flex;flex-direction:column;gap:8px}.entry{display:flex;justify-content:space-between;gap:12px;padding:12px 13px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px}.entry small{display:block;color:var(--muted);margin-top:4px}
+.chart{width:100%;height:150px;display:block}.notice{font-size:11px;color:var(--muted);line-height:1.6}.pill{display:inline-block;border:1px solid var(--line);border-radius:30px;padding:5px 9px;color:var(--mint);font-size:10px}
+.empty{padding:24px;text-align:center;color:var(--muted);font-size:12px}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.metric{font-size:30px}.form{grid-template-columns:repeat(3,1fr)}.form .field.full{grid-column:1/-1}main{padding-left:24px;padding-right:24px}}
+</style>
+</head>
+<body>
+<header><div class="brand">PERSONAL WELLNESS<strong>HEALTH LOG</strong></div><div class="date" id="today"></div></header>
+<main>
+<section class="view active" id="home">
+<h1>今日のコンディション</h1><p class="sub">小さな記録を積み重ねて、健康の変化を把握する。</p>
+<div class="grid">
+<div class="card"><div class="metric-label">体重</div><div class="metric" id="mWeight">--<span class="unit"> kg</span></div><div class="notice">最新の記録</div></div>
+<div class="card"><div class="metric-label">歩数</div><div class="metric" id="mSteps">--<span class="unit"> 歩</span></div><div class="notice">今日の活動量</div></div>
+<div class="card"><div class="metric-label">睡眠</div><div class="metric" id="mSleep">--<span class="unit"> 時間</span></div><div class="notice">昨夜の睡眠</div></div>
+<div class="card"><div class="metric-label">水分</div><div class="metric" id="mWater">--<span class="unit"> L</span></div><div class="notice">今日の摂取量</div></div>
+</div>
+<div class="section card"><div class="eyebrow">DAILY NOTE</div><div class="section-title">今日の記録状況 <small id="recordStatus">未記録</small></div><div id="todaySummary" class="notice">身体・食事・運動・睡眠を記録できます。</div></div>
+<div class="section"><div class="section-title">クイック記録 <small>QUICK ACTION</small></div><div class="quick"><button onclick="showView('body')">＋ 身体データ</button><button onclick="showView('activity')">＋ 運動・歩数</button><button onclick="showView('food')">＋ 食事・栄養</button><button onclick="showView('sleep')">＋ 睡眠・水分</button></div></div>
+<div class="section card"><div class="eyebrow">PRINCIPLE</div><div style="font-size:15px;line-height:1.7">数字に振り回されず、<br><span style="color:var(--mint)">長期的な傾向</span>を見る。</div><p class="notice">このアプリは健康記録の補助ツールです。診断や治療の代わりにはなりません。</p></div>
+</section>
+
+<section class="view" id="body">
+<h1>身体データ</h1><p class="sub">体重・体脂肪率を記録します。</p>
+<div class="card"><div class="eyebrow">BODY COMPOSITION</div><div class="form">
+<div class="field"><label>日付</label><input type="date" id="bodyDate"></div>
+<div class="field"><label>体重（kg）</label><input type="number" step=".1" id="weight" placeholder="62.0"></div>
+<div class="field"><label>体脂肪率（%）</label><input type="number" step=".1" id="fat" placeholder="任意"></div>
+<div class="field"><label>筋肉量（kg）</label><input type="number" step=".1" id="muscle" placeholder="任意"></div>
+<div class="field"><label>安静時心拍数（bpm）</label><input type="number" id="heart" placeholder="任意"></div>
+</div><div class="actions"><button onclick="saveBody()">身体データを保存</button></div></div>
+<div class="section card"><div class="section-title">体重の推移 <small>直近10件</small></div><svg class="chart" id="weightChart" viewBox="0 0 600 150" preserveAspectRatio="none"></svg></div>
+<div class="section"><div class="section-title">記録履歴</div><div class="list" id="bodyList"></div></div>
+</section>
+
+<section class="view" id="activity">
+<h1>運動・活動</h1><p class="sub">日々の活動量とトレーニングを記録します。</p>
+<div class="card"><div class="eyebrow">ACTIVITY LOG</div><div class="form">
+<div class="field"><label>日付</label><input type="date" id="activityDate"></div>
+<div class="field"><label>歩数</label><input type="number" id="steps" placeholder="6500"></div>
+<div class="field"><label>運動時間（分）</label><input type="number" id="exerciseMinutes" placeholder="30"></div>
+<div class="field"><label>運動の種類</label><select id="exerciseType"><option>筋力トレーニング</option><option>有酸素運動</option><option>ウォーキング</option><option>木刀素振り</option><option>ストレッチ</option><option>休養</option></select></div>
+<div class="field"><label>メモ</label><input id="activityNote" placeholder="種目・重量・回数など"></div>
+</div><div class="actions"><button onclick="saveActivity()">運動記録を保存</button></div></div>
+<div class="section"><div class="section-title">最近の運動</div><div class="list" id="activityList"></div></div>
+</section>
+
+<section class="view" id="food">
+<h1>食事・栄養</h1><p class="sub">摂取量と栄養バランスを記録します。</p>
+<div class="card"><div class="eyebrow">NUTRITION LOG</div><div class="form">
+<div class="field"><label>日付</label><input type="date" id="foodDate"></div>
+<div class="field"><label>食事</label><select id="meal"><option>朝食</option><option>昼食</option><option>夕食</option><option>間食</option></select></div>
+<div class="field"><label>カロリー（kcal）</label><input type="number" id="calories" placeholder="600"></div>
+<div class="field"><label>タンパク質（g）</label><input type="number" step=".1" id="protein" placeholder="30"></div>
+<div class="field"><label>脂質（g）</label><input type="number" step=".1" id="fatFood" placeholder="20"></div>
+<div class="field"><label>炭水化物（g）</label><input type="number" step=".1" id="carbs" placeholder="70"></div>
+<div class="field full"><label>食事メモ</label><textarea id="foodNote" placeholder="食べたもの・量など"></textarea></div>
+</div><div class="actions"><button onclick="saveFood()">食事記録を保存</button></div></div>
+<div class="section"><div class="section-title">最近の食事</div><div class="list" id="foodList"></div></div>
+</section>
+
+<section class="view" id="sleep">
+<h1>睡眠・生活習慣</h1><p class="sub">休息と日々のコンディションを記録します。</p>
+<div class="card"><div class="eyebrow">RECOVERY</div><div class="form">
+<div class="field"><label>日付</label><input type="date" id="sleepDate"></div>
+<div class="field"><label>睡眠時間（時間）</label><input type="number" step=".1" id="sleepHours" placeholder="7.0"></div>
+<div class="field"><label>水分摂取量（L）</label><input type="number" step=".1" id="water" placeholder="1.5"></div>
+<div class="field"><label>体調</label><select id="condition"><option>良好</option><option selected>普通</option><option>不調</option></select></div>
+<div class="field full"><label>メモ</label><textarea id="sleepNote" placeholder="疲労感・気分・気になる症状など"></textarea></div>
+</div><div class="actions"><button onclick="saveSleep()">生活記録を保存</button></div></div>
+<div class="section"><div class="section-title">最近の記録</div><div class="list" id="sleepList"></div></div>
+</section>
+
+<section class="view" id="analysis">
+<h1>分析</h1><p class="sub">記録が蓄積すると、変化の傾向を確認できます。</p>
+<div class="grid">
+<div class="card"><div class="metric-label">身体記録</div><div class="metric" id="countBody">0</div><div class="notice">件</div></div>
+<div class="card"><div class="metric-label">運動記録</div><div class="metric" id="countActivity">0</div><div class="notice">件</div></div>
+<div class="card"><div class="metric-label">食事記録</div><div class="metric" id="countFood">0</div><div class="notice">件</div></div>
+<div class="card"><div class="metric-label">生活記録</div><div class="metric" id="countSleep">0</div><div class="notice">件</div></div>
+</div>
+<div class="section card"><div class="section-title">データ管理</div><p class="notice">記録はこのブラウザ内に保存されます。端末間同期やクラウドバックアップはまだありません。定期的にバックアップを作成してください。</p><div class="actions"><button onclick="exportData()">データを書き出す</button><button class="secondary" onclick="document.getElementById('importFile').click()">バックアップを読み込む</button></div><input type="file" id="importFile" accept="application/json" hidden onchange="importData(event)"><div class="actions"><button class="secondary" onclick="clearData()">全データを削除</button></div></div>
+<div class="section card"><div class="eyebrow">APPLE HEALTH</div><div class="section-title">Appleヘルスケア連携 <span class="pill">今後の対応</span></div><p class="notice">現在のWeb版からHealthKitへ直接アクセスすることはできません。ネイティブiOSアプリ化した段階で、許可を得た項目だけを連携します。</p></div>
+</section>
+</main>
+<nav>
+<button class="active" data-view="home" onclick="showView('home')">ホーム</button>
+<button data-view="body" onclick="showView('body')">身体</button>
+<button data-view="activity" onclick="showView('activity')">運動</button>
+<button data-view="food" onclick="showView('food')">食事</button>
+<button data-view="sleep" onclick="showView('sleep')">生活</button>
+<button data-view="analysis" onclick="showView('analysis')">分析</button>
+</nav>
+<script>
+const KEY='health-log-v1';
+const empty=()=>({body:[],activity:[],food:[],sleep:[]});
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||empty();
+const today=()=>new Date().toLocaleDateString('sv-SE');
+['bodyDate','activityDate','foodDate','sleepDate'].forEach(id=>document.getElementById(id).value=today());
+document.getElementById('today').textContent=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+function persist(){localStorage.setItem(KEY,JSON.stringify(db));render();alert('記録を保存しました。')}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo(0,0);render()}
+function add(type,obj){db[type].unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),...obj,createdAt:new Date().toISOString()});persist()}
+function val(id){return document.getElementById(id).value}
+function saveBody(){if(!val('weight'))return alert('体重を入力してください');add('body',{date:val('bodyDate'),weight:+val('weight'),fat:num('fat'),muscle:num('muscle'),heart:num('heart')})}
+function saveActivity(){add('activity',{date:val('activityDate'),steps:num('steps'),minutes:num('exerciseMinutes'),type:val('exerciseType'),note:val('activityNote')})}
+function saveFood(){if(!val('calories')&&!val('foodNote'))return alert('カロリーまたは食事メモを入力してください');add('food',{date:val('foodDate'),meal:val('meal'),calories:num('calories'),protein:num('protein'),fat:num('fatFood'),carbs:num('carbs'),note:val('foodNote')})}
+function saveSleep(){add('sleep',{date:val('sleepDate'),hours:num('sleepHours'),water:num('water'),condition:val('condition'),note:val('sleepNote')})}
+function num(id){return val(id)===''?null:Number(val(id))}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function item(title,sub,right,del){return `<div class="entry"><div>${esc(title)}<small>${esc(sub||'')}</small></div><div style="text-align:right;white-space:nowrap">${esc(right||'')}<small><a href="#" style="color:#e6a39b" onclick="removeItem('${del.type}','${del.id}');return false">削除</a></small></div></div>`}
+function removeItem(type,id){if(confirm('この記録を削除しますか？')){db[type]=db[type].filter(x=>x.id!==id);persist()}}
+function renderList(id,type,fn){const el=document.getElementById(id);el.innerHTML=db[type].length?db[type].slice(0,20).map(x=>fn(x)).join(''):'<div class="empty">まだ記録がありません</div>'}
+function render(){
+ const latest=db.body[0],a=db.activity.find(x=>x.date===today()),s=db.sleep.find(x=>x.date===today());
+ document.getElementById('mWeight').innerHTML=latest?`${latest.weight.toFixed(1)}<span class="unit"> kg</span>`:'--<span class="unit"> kg</span>';
+ document.getElementById('mSteps').innerHTML=a&&a.steps!==null?`${a.steps.toLocaleString()}<span class="unit"> 歩</span>`:'--<span class="unit"> 歩</span>';
+ document.getElementById('mSleep').innerHTML=s&&s.hours!==null?`${s.hours}<span class="unit"> 時間</span>`:'--<span class="unit"> 時間</span>';
+ document.getElementById('mWater').innerHTML=s&&s.water!==null?`${s.water}<span class="unit"> L</span>`:'--<span class="unit"> L</span>';
+ const any=[...db.body,...db.activity,...db.food,...db.sleep].some(x=>x.date===today());
+ document.getElementById('recordStatus').textContent=any?'記録あり':'未記録';
+ document.getElementById('todaySummary').textContent=any?'今日のデータが保存されています。分析画面からバックアップできます。':'身体・食事・運動・睡眠を記録できます。';
+ document.getElementById('countBody').textContent=db.body.length;document.getElementById('countActivity').textContent=db.activity.length;document.getElementById('countFood').textContent=db.food.length;document.getElementById('countSleep').textContent=db.sleep.length;
+ renderList('bodyList','body',x=>item(`${x.weight} kg`,x.date, x.fat==null?'体脂肪 未入力':`体脂肪 ${x.fat}%`,{type:'body',id:x.id}));
+ renderList('activityList','activity',x=>item(x.type,x.date,`${x.steps??'—'}歩 / ${x.minutes??'—'}分`,{type:'activity',id:x.id}));
+ renderList('foodList','food',x=>item(x.meal,x.date,`${x.calories??'—'} kcal`,{type:'food',id:x.id}));
+ renderList('sleepList','sleep',x=>item(x.condition,x.date,`${x.hours??'—'}時間 / ${x.water??'—'}L`,{type:'sleep',id:x.id}));
+ drawChart();
+}
+function drawChart(){const svg=document.getElementById('weightChart'),arr=[...db.body].filter(x=>x.weight>0).slice(0,10).reverse();if(!arr.length){svg.innerHTML='<text x="300" y="78" fill="#9eaea3" text-anchor="middle" font-size="14">体重を記録するとグラフが表示されます</text>';return}let min=Math.min(...arr.map(x=>x.weight))-.5,max=Math.max(...arr.map(x=>x.weight))+.5;let pts=arr.map((x,i)=>`${arr.length===1?300:30+i*540/(arr.length-1)},${125-(x.weight-min)/(max-min||1)*100}`).join(' ');svg.innerHTML=`<polyline points="${pts}" fill="none" stroke="#b7d7bd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`+pts.split(' ').map(p=>{let [x,y]=p.split(',');return `<circle cx="${x}" cy="${y}" r="4" fill="#d9c49a"/>`}).join('')+`<text x="8" y="14" fill="#9eaea3" font-size="10">${max.toFixed(1)} kg</text><text x="8" y="145" fill="#9eaea3" font-size="10">${min.toFixed(1)} kg</text>`}
+function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='health-log-backup-'+today()+'.json';a.click();URL.revokeObjectURL(a.href)}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.body||!d.activity||!d.food||!d.sleep)throw 0;db=d;persist();alert('バックアップを読み込みました')}catch{alert('ファイル形式が正しくありません')}};r.readAsText(f)}
+function clearData(){if(confirm('すべての健康記録を削除します。この操作は取り消せません。')){db=empty();persist()}}
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+render();
+</script>
+</body></html>
